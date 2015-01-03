@@ -15,7 +15,7 @@ class LogHelper {
         
     }
 
-    func log(tag:String, _ content:String) -> Void {
+    func log(tag: String, _ content: String) -> Void {
         println("[\(tag)] \(content)")
     }
 }

@@ -10,21 +10,21 @@ import UIKit
 
 class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
-    var contacts:[ContactsHelper.Person] = []
+    var contacts: [ContactsHelper.Person] = []
     enum CLICK_ACTION {
         case SHOW_DETAILS
         case DO_CHECK
     }
     let clickAction = CLICK_ACTION.SHOW_DETAILS
-    let LOG_TAG:String = "ViewController"
+    let LOG_TAG: String = "ViewController"
 
-    var logger:LogHelper = LogHelper()
+    var logger: LogHelper = LogHelper()
+    var contactsHelper = ContactsHelper()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        var helper = ContactsHelper()
-        contacts = helper.getMyContacts()
+        contacts = contactsHelper.getMyContacts()
     }
 
     override func didReceiveMemoryWarning() {
@@ -57,8 +57,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     }
 
     func showDetails(tableView: UITableView, _ indexPath: NSIndexPath) {
-        var detailedInfo = "-"
-        var alert = UIAlertController(title: "详细信息", message: detailedInfo, preferredStyle: UIAlertControllerStyle.Alert)
+        var person = self.contacts[indexPath.row]
+        var detailedInfo = "[\(person.name)] " + contactsHelper.getDetailedInfo(person.id)
+        var alert = UIAlertController(title: "Detailed Information", message: detailedInfo, preferredStyle: UIAlertControllerStyle.Alert)
         let option = UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: {(action:UIAlertAction!) in ()})
         alert.addAction(option)
         self.presentViewController(alert, animated: true, completion: {})
