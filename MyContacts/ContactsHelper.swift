@@ -133,8 +133,8 @@ class ContactsHelper {
     // e.g. [name] hasFaceTime: Y/N hasPicture: Y/N
     func getDetailedInfo(recordID: ABRecordID) -> String {
         var error:Unmanaged<CFErrorRef>?
-        var addressBook: ABAddressBookRef = ABAddressBookCreateWithOptions(nil, &error).takeRetainedValue()
-        let record: ABRecord! = ABAddressBookGetPersonWithRecordID(addressBook, recordID)?.takeRetainedValue()
+        var addressBook: ABAddressBookRef = ABAddressBookCreateWithOptions(nil, &error).takeUnretainedValue()
+        let record: ABRecord! = ABAddressBookGetPersonWithRecordID(addressBook, recordID)?.takeUnretainedValue()
         let hasPicture: String = ABPersonHasImageData(record) ? "Y" : "N"
         var hasURL: String = "N"
         // Get the URL attributes
