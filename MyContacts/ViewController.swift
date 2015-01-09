@@ -20,6 +20,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     var logger: LogHelper = LogHelper()
     var contactsHelper = ContactsHelper()
+    
+    // Define an identifier for cell re-using. In Android we also try to reuse list items however I don't remember we have a counterpart for this...
+    let reusedCellIdentifier = "myContactsCell"
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,12 +39,38 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         return contacts.count;
     }
 
+    // System asking for a specific item. Similar to Adapter.getItem() in Android.
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell: UITableViewCell = UITableViewCell(style: UITableViewCellStyle.Subtitle, reuseIdentifier: "MyTestCell")
+        // Note: We should try to reuse the exsiting cells, instead of creating new cell each time.
+        var cell = tableView.dequeueReusableCellWithIdentifier(reusedCellIdentifier, forIndexPath: indexPath) as? UITableViewCell
+        if cell == nil {
+            cell = UITableViewCell(style: UITableViewCellStyle.Subtitle, reuseIdentifier: reusedCellIdentifier)
+        }
         var person = self.contacts[indexPath.row]
-        cell.textLabel?.text = person.name == "" ? person.email : person.name
-        cell.detailTextLabel?.text = person.phone
-        return cell
+        cell!.textLabel?.text = person.name == "" ? person.email : person.name
+        cell!.detailTextLabel?.text = person.phone
+        return cell!
+    }
+
+    // Returning true to enbale editing mode.
+    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+        return true;
+    }
+
+    func tableView(tableView: UITableView, editingStyleForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCellEditingStyle {
+        return UITableViewCellEditingStyle.Delete
+    }
+
+    func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        if editingStyle == UITableViewCellEditingStyle.Delete {
+            // Delete it from data source
+            contacts.removeAtIndex(indexPath.row)
+            // Delete the cell from TableView (In Android this could be done automatically when Adapter is changed.)
+            // Note that the first param is an NSArray object.
+            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: UITableViewRowAnimation.Fade)
+        } else if editingStyle == UITableViewCellEditingStyle.Insert {
+            // We don't handle Inserting.
+        }
     }
 
     // Show detailed information when a person item is clicked.
