@@ -146,4 +146,16 @@ class ContactsHelper {
         }
         return "hasHomepage:\(hasURL) hasPicture:\(hasPicture)"
     }
+
+    // Delete an entry/record
+    func deleteAddressBookEntry(recordID: ABRecordID) -> Bool {
+        var error:Unmanaged<CFErrorRef>?
+        var addressBook: ABAddressBook = ABAddressBookCreateWithOptions(nil, &error).takeUnretainedValue()
+        let record: ABRecord! = ABAddressBookGetPersonWithRecordID(addressBook, recordID)?.takeUnretainedValue()
+        let result = ABAddressBookRemoveRecord(addressBook, record, &error)
+        if error != nil {
+            println("Failed to delete address book entry: \(recordID)")
+        }
+        return result
+    }
 }
