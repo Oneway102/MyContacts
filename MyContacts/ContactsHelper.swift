@@ -152,9 +152,16 @@ class ContactsHelper {
         var error:Unmanaged<CFErrorRef>?
         var addressBook: ABAddressBook = ABAddressBookCreateWithOptions(nil, &error).takeUnretainedValue()
         let record: ABRecord! = ABAddressBookGetPersonWithRecordID(addressBook, recordID)?.takeUnretainedValue()
-        let result = ABAddressBookRemoveRecord(addressBook, record, &error)
+        var result = ABAddressBookRemoveRecord(addressBook, record, &error)
         if error != nil {
             println("Failed to delete address book entry: \(recordID)")
+            return false
+        }
+        // Don't forget to save the address book to persistent the state.
+        result = ABAddressBookSave(addressBook, &error)
+        if error != nil {
+            println("Failed to save address book: \(recordID)")
+            return false
         }
         return result
     }
