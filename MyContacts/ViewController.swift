@@ -21,6 +21,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     let clickAction = CLICK_ACTION.SHOW_DETAILS
 
     let contactsHelper = ContactsHelper()
+
+    @IBOutlet weak var navigationBar: UINavigationBar!
     
     // Define an identifier for cell re-using. In Android we also try to reuse list items however I don't remember we have a counterpart for this...
     let reusedCellIdentifier: String = "myContactsCell"
@@ -29,7 +31,19 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        contacts = contactsHelper.getMyContacts()
+        self.contacts = contactsHelper.getMyContacts()
+        // UINavigationBar
+        //self.navigationItem
+        var barButtonItem = UIBarButtonItem(title: "Select", style: UIBarButtonItemStyle.Plain, target: self, action: "leftBarButtonItemClicked")
+        self.navigationItem.leftBarButtonItem = barButtonItem
+        var navigationItem = navigationBar.popNavigationItemAnimated(false)
+        navigationItem?.title = "Contacts"
+        navigationItem?.leftBarButtonItem = barButtonItem
+        navigationBar.pushNavigationItem(navigationItem!, animated: true)
+    }
+
+    func leftBarButtonItemClicked() {
+        
     }
 
     // UIViewController method.
