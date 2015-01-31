@@ -16,9 +16,19 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     // For debugging purpose.
     enum CLICK_ACTION {
         case SHOW_DETAILS //Click to show detailed info in a popup dialog.
-        case DO_CHECK //Click to mark the cell item (so that we can perform multi-select).
+        case MUTIPLE_SELECT //Click to mark the cell item (so that we can perform multi-select).
+        case SINGLE_DELETE
     }
     let clickAction = CLICK_ACTION.SHOW_DETAILS
+
+    // Left nav button tags
+    let selectTag = 100
+    let doneTag = 200
+    let editTag = 300
+
+    // Views and controls
+    var leftButtonItem: UIBarButtonItem?
+    var tableView: UITableView?
 
     let contactsHelper = ContactsHelper()
 
@@ -33,9 +43,17 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         // Do any additional setup after loading the view, typically from a nib.
         self.contacts = contactsHelper.getMyContacts()
         // UINavigationBar
-        //self.navigationItem
+        buildLeftNavigationButton()
+
+        // This option is also selected in the storyboard. Usually it is better to configure a table view in a xib/storyboard, but we're redundantly configuring this in code to demonstrate how to do that.
+        self.tableView?.allowsMultipleSelection = true
+    }
+
+    func buildLeftNavigationButton() {
         var barButtonItem = UIBarButtonItem(title: "Select", style: UIBarButtonItemStyle.Plain, target: self, action: "leftBarButtonItemClicked")
-        self.navigationItem.leftBarButtonItem = barButtonItem
+        barButtonItem.tag = editTag
+        //self.navigationItem.leftBarButtonItem = barButtonItem
+        self.leftButtonItem = barButtonItem
         var navigationItem = navigationBar.popNavigationItemAnimated(false)
         navigationItem?.title = "Contacts"
         navigationItem?.leftBarButtonItem = barButtonItem
@@ -43,7 +61,20 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     }
 
     func leftBarButtonItemClicked() {
-        
+        var button = self.leftButtonItem
+        if button?.tag == editTag {
+            button?.title = "Done"
+            button?.tag = doneTag
+            self.tableView?.setEditing(true, animated: false)
+        } else if button?.tag == doneTag {
+            button?.title = "Edit"
+            button?.tag = editTag
+            self.tableView?.setEditing(false, animated: false)
+            // reset data source.
+            for person in contacts {
+                //person.checked = false
+            }
+        }
     }
 
     // UIViewController method.
@@ -54,6 +85,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     // UITableViewDataSource protocol.
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        // TODO: Is there a better to retain the UITableView handle? (We need it in [leftBarButtonItemClicked])
+        self.tableView = tableView
         return contacts.count;
     }
 
@@ -139,14 +172,31 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     // UITableViewDelegate protocol.
     // Show detailed information when a person item is clicked.
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        var button = self.leftButtonItem
+        if button?.tag == editTag {
+            showDetails(tableView, indexPath)
+        } else if button?.tag == doneTag {
+            // item selected
+            var person = self.contacts[indexPath.row]
+            person.checked = true
+        }
+        /*
         switch clickAction {
         case CLICK_ACTION.SHOW_DETAILS:
             showDetails(tableView, indexPath)
-        case CLICK_ACTION.DO_CHECK:
+        case CLICK_ACTION.MUTIPLE_SELECT:
             doCheck(tableView, indexPath)
+        case CLICK_ACTION.SINGLE_DELETE:
+            doDelete()
         default:
             println("Unknown action to clicking")
-        }
+        }*/
+    }
+
+    // UITableViewDelegate protocol.
+    func tableView(tableView: UITableView, didDeselectRowAtIndexPath indexPath: NSIndexPath) {
+        var person = self.contacts[indexPath.row]
+        person.checked = false
     }
 
     func showDetails(tableView: UITableView, _ indexPath: NSIndexPath) {
@@ -163,6 +213,10 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         //self.contacts[indexPath.row].checked = !self.contacts[indexPath.row].checked
         person.checked = !person.checked
         logger.log(LOG_TAG, person.name + " \(person.checked)")
+    }
+
+    func doDelete() {
+        
     }
 }
 
