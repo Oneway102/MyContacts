@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import AddressBook
 
 class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
@@ -28,7 +29,11 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     // Views and controls
     var leftButtonItem: UIBarButtonItem?
+    var rightButtonItem: UIBarButtonItem?
     var tableView: UITableView?
+
+    // Selected items
+    var selectedItems = Dictionary<Int, ABRecordID>()
 
     let contactsHelper = ContactsHelper()
 
@@ -43,38 +48,52 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         // Do any additional setup after loading the view, typically from a nib.
         self.contacts = contactsHelper.getMyContacts()
         // UINavigationBar
-        buildLeftNavigationButton()
+        buildNavigationButtons()
 
         // This option is also selected in the storyboard. Usually it is better to configure a table view in a xib/storyboard, but we're redundantly configuring this in code to demonstrate how to do that.
         self.tableView?.allowsMultipleSelection = true
     }
 
-    func buildLeftNavigationButton() {
-        var barButtonItem = UIBarButtonItem(title: "Select", style: UIBarButtonItemStyle.Plain, target: self, action: "leftBarButtonItemClicked")
+    func buildNavigationButtons() {
+        // Left button
+        var barButtonItem = UIBarButtonItem(title: "Edit", style: UIBarButtonItemStyle.Plain, target: self, action: "leftButtonItemClicked")
         barButtonItem.tag = editTag
         //self.navigationItem.leftBarButtonItem = barButtonItem
         self.leftButtonItem = barButtonItem
+
+        // Right button
+        self.rightButtonItem = UIBarButtonItem(title: "Delete", style: UIBarButtonItemStyle.Plain, target: self, action: "rightButtonItemClicked")
+        self.rightButtonItem?.enabled = false
+
+        // Combine them togethter
         var navigationItem = navigationBar.popNavigationItemAnimated(false)
         navigationItem?.title = "Contacts"
-        navigationItem?.leftBarButtonItem = barButtonItem
+        navigationItem?.leftBarButtonItem = self.leftButtonItem
+        navigationItem?.rightBarButtonItem = self.rightButtonItem
         navigationBar.pushNavigationItem(navigationItem!, animated: true)
     }
 
-    func leftBarButtonItemClicked() {
+    func leftButtonItemClicked() {
         var button = self.leftButtonItem
         if button?.tag == editTag {
             button?.title = "Done"
             button?.tag = doneTag
+            //self.rightButtonItem?.enabled = true
             self.tableView?.setEditing(true, animated: false)
         } else if button?.tag == doneTag {
             button?.title = "Edit"
             button?.tag = editTag
             self.tableView?.setEditing(false, animated: false)
+            self.rightButtonItem?.enabled = false
             // reset data source.
-            for person in contacts {
-                //person.checked = false
-            }
+            selectedItems.removeAll(keepCapacity: false)
         }
+    }
+
+    func rightButtonItemClicked() {
+        var selectedRows = self.tableView?.indexPathsForSelectedRows() as [NSIndexPath]
+        doDelete(selectedRows, true)
+        self.rightButtonItem?.enabled = false
     }
 
     // UIViewController method.
@@ -123,15 +142,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     // editActionsForRowAtIndexPath() will be invoked instead.
     func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
         if editingStyle == UITableViewCellEditingStyle.Delete {
-            let recordID = contacts[indexPath.row].id
-            if !contactsHelper.deleteAddressBookEntry(recordID) {
-                return
-            }
-            // Delete it from data source
-            contacts.removeAtIndex(indexPath.row)
-            // Delete the cell from TableView (In Android this could be done automatically when Adapter is changed.)
-            // Note that the first param is an NSArray object.
-            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: UITableViewRowAnimation.Fade)
+            doDelete([indexPath], false)
         } else if editingStyle == UITableViewCellEditingStyle.Insert {
             // We don't handle Inserting.
         }
@@ -147,22 +158,13 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         var moreAction: UITableViewRowAction = UITableViewRowAction(style: UITableViewRowActionStyle.Default, title: "More", handler: {
             (tableViewRowAction:UITableViewRowAction!, index:NSIndexPath!) in
                 println("More action clicked")
-            
         })
         moreAction.backgroundColor = UIColor.grayColor()
 
         var deleteAction: UITableViewRowAction = UITableViewRowAction(style: UITableViewRowActionStyle.Default, title: "Delete", handler: {
             (tableViewRowAction:UITableViewRowAction!, index:NSIndexPath!) in
-                //println("More action clicked")
-                let recordID = self.contacts[index.row].id
-                if !self.contactsHelper.deleteAddressBookEntry(recordID) {
-                    return
-                }
-                // Delete it from data source
-                self.contacts.removeAtIndex(indexPath.row)
-                // Delete the cell from TableView (In Android this could be done automatically when Adapter is changed.)
-                // Note that the first param is an NSArray object.
-                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: UITableViewRowAnimation.Fade)
+                println("Delete action clicked")
+                self.doDelete([index], false)
         })
         deleteAction.backgroundColor = UIColor.redColor()
 
@@ -178,7 +180,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         } else if button?.tag == doneTag {
             // item selected
             var person = self.contacts[indexPath.row]
-            person.checked = true
+            selectedItems[indexPath.row] = person.id
+            self.rightButtonItem?.enabled = true
         }
         /*
         switch clickAction {
@@ -196,7 +199,23 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     // UITableViewDelegate protocol.
     func tableView(tableView: UITableView, didDeselectRowAtIndexPath indexPath: NSIndexPath) {
         var person = self.contacts[indexPath.row]
-        person.checked = false
+        selectedItems.removeValueForKey(indexPath.row)
+        self.rightButtonItem?.enabled = selectedItems.count > 0
+    }
+
+    // Delete a specific entry from address book. When @debug is true, we only remove it in the memory.
+    func doDelete(indexPaths: [NSIndexPath], _ debug: Bool) {
+        for item in indexPaths {
+            let recordID = self.contacts[item.row].id
+            if !debug && !self.contactsHelper.deleteAddressBookEntry(recordID) {
+                return
+            }
+            // Delete it from data source
+            self.contacts.removeAtIndex(item.row)
+        }
+        // Delete the cell from TableView (In Android this could be done automatically when Adapter is changed.)
+        // Note that the first param is an NSArray object.
+        self.tableView?.deleteRowsAtIndexPaths(indexPaths, withRowAnimation: UITableViewRowAnimation.Fade)
     }
 
     func showDetails(tableView: UITableView, _ indexPath: NSIndexPath) {
@@ -209,14 +228,6 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     }
 
     func doCheck(tableView: UITableView, _ indexPath: NSIndexPath) {
-        var person = self.contacts[indexPath.row]
-        //self.contacts[indexPath.row].checked = !self.contacts[indexPath.row].checked
-        person.checked = !person.checked
-        logger.log(LOG_TAG, person.name + " \(person.checked)")
-    }
-
-    func doDelete() {
-        
     }
 }
 

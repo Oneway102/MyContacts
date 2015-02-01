@@ -17,7 +17,7 @@ class ContactsHelper {
         var name: String = ""
         var phone: String = ""
         var email: String = ""
-        var checked: Bool = false
+        //var checked: Bool = false
     }
 
     init() {
