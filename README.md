@@ -1,7 +1,7 @@
 MyContacts
 ==========
 
-A sample iOS App to manage AddressBook items, written in pure Swift.
+A sample iOS App to manage AddressBook items, written in pure Swift (with comments for those who are much more farmiliar with Android development).
 
 Functions:
 
