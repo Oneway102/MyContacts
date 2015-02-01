@@ -204,11 +204,11 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             let newIndex = item.row - i
             let person = self.contacts[newIndex]
             if !debug && !self.contactsHelper.deleteAddressBookEntry(person.id) {
-                return
-            } else {
-                println("Deleted: [\(item.row)] [\(person.id)] [Name=\(person.name)]");
-                println("Deleted: [\(contactsHelper.getDetailedInfo(person.id))]");
+                continue
             }
+
+            println("Deleted: [\(item.row)] [\(person.id)] [Name=\(person.name)]");
+
             // Delete it from data source
             self.contacts.removeAtIndex(newIndex)
             i++
