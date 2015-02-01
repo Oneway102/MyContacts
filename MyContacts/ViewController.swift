@@ -47,6 +47,10 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         self.contacts = contactsHelper.getMyContacts()
+        for i in 0...10 {
+            println("[\(i)] [\(self.contacts[i].id)] [Name=\(self.contacts[i].name)]")
+        }
+
         // UINavigationBar
         buildNavigationButtons()
 
@@ -92,7 +96,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     func rightButtonItemClicked() {
         var selectedRows = self.tableView?.indexPathsForSelectedRows() as [NSIndexPath]
-        doDelete(selectedRows, true)
+        doDelete(selectedRows, false)
         self.rightButtonItem?.enabled = false
     }
 
@@ -183,17 +187,6 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             selectedItems[indexPath.row] = person.id
             self.rightButtonItem?.enabled = true
         }
-        /*
-        switch clickAction {
-        case CLICK_ACTION.SHOW_DETAILS:
-            showDetails(tableView, indexPath)
-        case CLICK_ACTION.MUTIPLE_SELECT:
-            doCheck(tableView, indexPath)
-        case CLICK_ACTION.SINGLE_DELETE:
-            doDelete()
-        default:
-            println("Unknown action to clicking")
-        }*/
     }
 
     // UITableViewDelegate protocol.
@@ -205,14 +198,22 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     // Delete a specific entry from address book. When @debug is true, we only remove it in the memory.
     func doDelete(indexPaths: [NSIndexPath], _ debug: Bool) {
+        var i = 0
         for item in indexPaths {
-            let recordID = self.contacts[item.row].id
-            if !debug && !self.contactsHelper.deleteAddressBookEntry(recordID) {
+            // Note that we have a changing index after item removed each time.
+            let newIndex = item.row - i
+            let person = self.contacts[newIndex]
+            if !debug && !self.contactsHelper.deleteAddressBookEntry(person.id) {
                 return
+            } else {
+                println("Deleted: [\(item.row)] [\(person.id)] [Name=\(person.name)]");
+                println("Deleted: [\(contactsHelper.getDetailedInfo(person.id))]");
             }
             // Delete it from data source
-            self.contacts.removeAtIndex(item.row)
+            self.contacts.removeAtIndex(newIndex)
+            i++
         }
+
         // Delete the cell from TableView (In Android this could be done automatically when Adapter is changed.)
         // Note that the first param is an NSArray object.
         self.tableView?.deleteRowsAtIndexPaths(indexPaths, withRowAnimation: UITableViewRowAnimation.Fade)
@@ -220,6 +221,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     func showDetails(tableView: UITableView, _ indexPath: NSIndexPath) {
         var person = self.contacts[indexPath.row]
+        // TODO: Show more information here as you wish.
         var detailedInfo = "[\(person.name)] " + contactsHelper.getDetailedInfo(person.id)
         var alert = UIAlertController(title: "Detailed Information", message: detailedInfo, preferredStyle: UIAlertControllerStyle.Alert)
         let option = UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: {(action:UIAlertAction!) in ()})
