@@ -198,20 +198,24 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
     // Delete a specific entry from address book. When @debug is true, we only remove it in the memory.
     func doDelete(indexPaths: [NSIndexPath], _ debug: Bool) {
-        var i = 0
-        for item in indexPaths {
+
+        // Note: Need to sort the array by row DESC, so that we can remove them from self.contacts properly.
+        var seleted = indexPaths.sorted { (a: NSIndexPath, b: NSIndexPath) -> Bool in
+            return (a.row > b.row)
+        }
+
+        for item in seleted {
             // Note that we have a changing index after item removed each time.
-            let newIndex = item.row - i
+            let newIndex = item.row
             let person = self.contacts[newIndex]
             if !debug && !self.contactsHelper.deleteAddressBookEntry(person.id) {
                 continue
             }
 
-            println("Deleted: [\(item.row)] [\(person.id)] [Name=\(person.name)]");
+            println("Deleted: [\(item.row)] [\(person.id)] [Name=\(person.name)]")
 
             // Delete it from data source
             self.contacts.removeAtIndex(newIndex)
-            i++
         }
 
         // Delete the cell from TableView (In Android this could be done automatically when Adapter is changed.)
